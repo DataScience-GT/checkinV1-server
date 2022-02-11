@@ -38,23 +38,23 @@ function checkAPIkey(key, requiredScope) {
     db.all(sql, (err, rows) => {
       if (err) {
         //res.status(400).json({ error: err.message });
-        console.log(err.message);
+        //console.log(err.message);
         reject(err.message);
       }
       if (rows.length <= 0) {
         //res.status(400).json({ error: "API Key does not exist" });
-        console.log(1);
+        //console.log(1);
         reject("API Key does not exist");
       }
       if (rows.length > 1) {
         //res.status(400).json({ error: "duplicate API Keys exist" });
-        console.log(2);
+        //console.log(2);
         reject("duplicate API Keys exist");
       }
       //verify scope
       if (!hasScope(rows, requiredScope)) {
         //res.status(400).json({ error: "Key scope does not allow this request" });
-        console.log(3);
+        //console.log(3);
         reject(`key scope does not contain ${requiredScope}`);
       }
       resolve("success");
