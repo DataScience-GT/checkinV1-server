@@ -3,7 +3,6 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const app = express();
-const port = 3000;
 
 //load other things
 const generateApiKey = require("generate-api-key");
@@ -349,6 +348,6 @@ app.get("/api/:key/", async (req, res) => {
 */
 
 //---------------end of requests----------
-app.listen(process.env.port || port, () =>
+app.listen(process.env.PORT || 5000, () =>
   console.log(`Hello world app listening on port ${port}!`)
 );
