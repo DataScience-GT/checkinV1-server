@@ -64,7 +64,7 @@ function checkAPIkey(key, requiredScope) {
 
 function hasScope(rows, required) {
   let row = rows[0];
-  if (!scopes) {
+  if (!row) {
     return false;
   }
   let scopes = row.scopes.split(",");
