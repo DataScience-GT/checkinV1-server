@@ -3,7 +3,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
 const app = express();
-const port = 5069;
+const port = 3000;
 
 //load other things
 const generateApiKey = require("generate-api-key");
