@@ -349,6 +349,6 @@ app.get("/api/:key/", async (req, res) => {
 */
 
 //---------------end of requests----------
-app.listen(process.enc.port || port, () =>
+app.listen(process.env.port || port, () =>
   console.log(`Hello world app listening on port ${port}!`)
 );
