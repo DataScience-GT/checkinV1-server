@@ -104,7 +104,7 @@ function hasScope(rows, required) {
 /**
  * @return list of api keys
  */
-app.get("/api/:key/keys/list", async (req, res) => {
+app.get("/api/:key/key/list", async (req, res) => {
   //check for prerequisites
   let key = req.params.key;
   try {
@@ -132,7 +132,7 @@ app.get("/api/:key/keys/list", async (req, res) => {
 /**
  * @return newly generated master key
  */
-app.get("/api/:key/keys/generatemaster", async (req, res) => {
+app.get("/api/:key/key/generatemaster", async (req, res) => {
   //check for prerequisites
   let key = req.params.key;
   try {
@@ -163,7 +163,7 @@ app.get("/api/:key/keys/generatemaster", async (req, res) => {
 /**
  * @return scopes of api key
  */
-app.get("/api/:key/keys/test", async (req, res) => {
+app.get("/api/:key/key/test", async (req, res) => {
   let key = req.params.key;
   let hash = md5(key);
 
@@ -231,6 +231,8 @@ app.post("/api/:key/event/create", async (req, res) => {
 
   //get body data
   var errors = [];
+  var status = 0;
+  var statusChanged = false;
   if (!req.body.event) {
     errors.push("must include a new event");
   } else {
@@ -244,6 +246,15 @@ app.post("/api/:key/event/create", async (req, res) => {
     } else if (req.body.event.identifier.length > 24) {
       errors.push("Event identifiers cannot be longer than 24 characters");
     }
+
+    if(req.body.event.status) {
+      if(0+req.body.event.status > 1 || 0+req.body.event.status < 0 || !Number.isInteger(req.body.event.status)) {
+        errors.push("Event status can only have values 0,1");
+      } else {
+        status = req.body.event.status;
+        statusChanged = true;
+      }
+    }
   }
   if (errors.length) {
     res.status(400).json({ error: errors.join(", ") });
@@ -251,9 +262,20 @@ app.post("/api/:key/event/create", async (req, res) => {
   }
 
   //insert into events table
-  let sql = `INSERT INTO events (name, identifier, description) VALUES ('${req.body.event.name}', '${req.body.event.identifier}', '${req.body.event.description}');`;
-  if (!req.body.event.description) {
-    sql = `INSERT INTO events (name, identifier) VALUES ('${req.body.event.name}', '${req.body.event.identifier}');`;
+  var additional = [];
+  var values = [];
+  //let sql = `INSERT INTO events (status, name, identifier, description) VALUES ('${status}', '${req.body.event.name}', '${req.body.event.identifier}', '${req.body.event.description}');`;
+  if (req.body.event.description) {
+    additional.push(`description`);
+    values.push(`'${req.body.event.description}'`);
+  }
+  if (statusChanged) {
+    additional.push(`status`);
+    values.push(`'${status}'`);
+  }
+  let sql = `INSERT INTO events (name, identifier) VALUES ('${req.body.event.name}', '${req.body.event.identifier}');`;
+  if(additional.length > 0) {
+    sql = `INSERT INTO events (name, identifier, ${additional.join(", ")}) VALUES ('${req.body.event.name}', '${req.body.event.identifier}', ${values.join(", ")});`;
   }
   db.run(sql, (err) => {
     if (err) {
@@ -261,7 +283,7 @@ app.post("/api/:key/event/create", async (req, res) => {
       return;
     }
     //create new table for event
-    let sql2 = `CREATE TABLE "${req.body.event.identifier}" (
+    let sql2 = `CREATE TABLE "event_${req.body.event.identifier}" (
 	"barcodeNum"	INTEGER NOT NULL UNIQUE,
 	"attended"	INTEGER NOT NULL DEFAULT 0,
 	"lastModified"	TEXT,
@@ -296,28 +318,50 @@ app.post("/api/:key/event/update", async (req, res) => {
 
   //get body data
   var errors = [];
+  var status = 0;
+  var statusChanged = false;
   if (!req.body.event) {
-    errors.push("must include a new event");
+    errors.push("must include an event to update");
   } else {
-    if (!req.body.event.name) {
-      errors.push("New events must have a name");
-    }
+
     if (!req.body.event.identifier) {
-      errors.push("New events must have an identifer");
+      errors.push("Events must have an identifer");
     } else if (req.body.event.identifier.includes(" ")) {
       errors.push("Event identifiers cannot include spaces");
     } else if (req.body.event.identifier.length > 24) {
       errors.push("Event identifiers cannot be longer than 24 characters");
+    }
+
+    if(req.body.event.status) {
+      if(0+req.body.event.status > 1 || 0+req.body.event.status < 0 || !Number.isInteger(req.body.event.status)) {
+        errors.push("Event status can only have values 0,1");
+      } else {
+        status = req.body.event.status;
+        statusChanged = true;
+      }
     }
   }
   if (errors.length) {
     res.status(400).json({ error: errors.join(", ") });
     return;
   }
-  let sql = `UPDATE events SET name = '${req.body.event.name}', description = '${req.body.event.description}' WHERE identifier = '${req.body.event.identifier}';`;
-  if (!req.body.event.description) {
-    sql = `UPDATE events SET name = '${req.body.event.name}' WHERE identifier = '${req.body.event.identifier}';`;
+  
+  var additional = [];
+  if (req.body.event.name) {
+    additional.push(`name = '${req.body.event.name}'`);
   }
+  if (req.body.event.description) {
+    additional.push(`description = '${req.body.event.description}'`);
+  }
+  if (statusChanged) {
+    additional.push(`status = '${status}'`);
+  }
+  if(additional.length <= 0) {
+    res.status(400).json({ error: "Missing properties of event to update" });
+    return;
+  }
+
+  let sql = `UPDATE events SET ${additional.join(", ")} WHERE identifier = '${req.body.event.identifier}';`;
   db.run(sql, (err) => {
     if (err) {
       res.status(400).json({ error: err.message });
@@ -325,6 +369,33 @@ app.post("/api/:key/event/update", async (req, res) => {
     }
     res.json({
       message: "success",
+    });
+  });
+});
+
+/**
+ * @return list of users
+ */
+ app.get("/api/:key/user/list", async (req, res) => {
+  //check for prerequisites
+  let key = req.params.key;
+  try {
+    let result = await checkAPIkey(key, "user.list");
+  } catch (err) {
+    res.status(400).json({ error: err });
+    return;
+  }
+
+  //get all events
+  let sql = `SELECT * FROM users;`;
+  db.all(sql, (err, rows) => {
+    if (err) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
+    res.json({
+      message: "success",
+      data: rows,
     });
   });
 });
