@@ -233,26 +233,29 @@ app.post("/api/:key/event/create", async (req, res) => {
   var errors = [];
   var status = 0;
   var statusChanged = false;
-  if (!req.body.event.name) {
+  if (!req.query.name) {
     errors.push("New events must have a name");
   }
-  if (!req.body.event.identifier) {
+  if (!req.query.identifier) {
     errors.push("New events must have an identifer");
-  } else if (req.body.event.identifier.includes(" ")) {
+  } else if (req.query.identifier.includes(" ")) {
     errors.push("Event identifiers cannot include spaces");
-  } else if (req.body.event.identifier.length > 24) {
+  } else if (req.query.identifier.length > 24) {
     errors.push("Event identifiers cannot be longer than 24 characters");
   }
 
-  if (req.body.event.status) {
+  //res.json({data: req.query});
+  //return;
+
+  if (req.query.status) {
     if (
-      0 + req.body.event.status > 1 ||
-      0 + req.body.event.status < 0 ||
-      !Number.isInteger(req.body.event.status)
+      +req.query.status > 1 ||
+      +req.query.status < 0 ||
+      !Number.isInteger(+req.query.status)
     ) {
       errors.push("Event status can only have values 0,1");
     } else {
-      status = req.body.event.status;
+      status = req.query.status;
       statusChanged = true;
     }
   }
@@ -265,22 +268,21 @@ app.post("/api/:key/event/create", async (req, res) => {
   //insert into events table
   var additional = [];
   var values = [];
-  //let sql = `INSERT INTO events (status, name, identifier, description) VALUES ('${status}', '${req.body.event.name}', '${req.body.event.identifier}', '${req.body.event.description}');`;
-  if (req.body.event.description) {
+  if (req.query.description) {
     additional.push(`description`);
-    values.push(`'${req.body.event.description}'`);
+    values.push(`'${req.query.description}'`);
   }
   if (statusChanged) {
     additional.push(`status`);
     values.push(`'${status}'`);
   }
-  let sql = `INSERT INTO events (name, identifier) VALUES ('${req.body.event.name}', '${req.body.event.identifier}');`;
+  let sql = `INSERT INTO events (name, identifier) VALUES ('${req.query.name}', '${req.query.identifier}');`;
   if (additional.length > 0) {
     sql = `INSERT INTO events (name, identifier, ${additional.join(
       ", "
-    )}) VALUES ('${req.body.event.name}', '${
-      req.body.event.identifier
-    }', ${values.join(", ")});`;
+    )}) VALUES ('${req.query.name}', '${req.query.identifier}', ${values.join(
+      ", "
+    )});`;
   }
   db.run(sql, (err) => {
     if (err) {
@@ -288,7 +290,7 @@ app.post("/api/:key/event/create", async (req, res) => {
       return;
     }
     //create new table for event
-    let sql2 = `CREATE TABLE "event_${req.body.event.identifier}" (
+    let sql2 = `CREATE TABLE "event_${req.query.identifier}" (
 	"barcodeNum"	INTEGER NOT NULL UNIQUE,
 	"attended"	INTEGER NOT NULL DEFAULT 0,
 	"lastModified"	TEXT,
@@ -325,28 +327,27 @@ app.post("/api/:key/event/update", async (req, res) => {
   var errors = [];
   var status = 0;
   var statusChanged = false;
-  if (!req.body.event) {
-    errors.push("must include an event to update");
-  } else {
-    if (!req.body.event.identifier) {
-      errors.push("Events must have an identifer");
-    } else if (req.body.event.identifier.includes(" ")) {
-      errors.push("Event identifiers cannot include spaces");
-    } else if (req.body.event.identifier.length > 24) {
-      errors.push("Event identifiers cannot be longer than 24 characters");
-    }
+  if (!req.query.identifier) {
+    errors.push("Query must include an identifier property");
+  } else if (req.query.identifier.includes(" ")) {
+    errors.push("Event identifiers cannot include spaces");
+  } else if (req.query.identifier.length > 24) {
+    errors.push("Event identifiers cannot be longer than 24 characters");
+  }
 
-    if (req.body.event.status) {
-      if (
-        0 + req.body.event.status > 1 ||
-        0 + req.body.event.status < 0 ||
-        !Number.isInteger(req.body.event.status)
-      ) {
-        errors.push("Event status can only have values 0,1");
-      } else {
-        status = req.body.event.status;
-        statusChanged = true;
-      }
+  //res.json({data: req.query});
+  //return;
+
+  if (req.query.status) {
+    if (
+      +req.query.status > 1 ||
+      +req.query.status < 0 ||
+      !Number.isInteger(+req.query.status)
+    ) {
+      errors.push("Event status can only have values 0,1");
+    } else {
+      status = req.query.status;
+      statusChanged = true;
     }
   }
   if (errors.length) {
@@ -355,11 +356,11 @@ app.post("/api/:key/event/update", async (req, res) => {
   }
 
   var additional = [];
-  if (req.body.event.name) {
-    additional.push(`name = '${req.body.event.name}'`);
+  if (req.query.name) {
+    additional.push(`name = '${req.query.name}'`);
   }
-  if (req.body.event.description) {
-    additional.push(`description = '${req.body.event.description}'`);
+  if (req.query.description) {
+    additional.push(`description = '${req.query.description}'`);
   }
   if (statusChanged) {
     additional.push(`status = '${status}'`);
@@ -370,7 +371,7 @@ app.post("/api/:key/event/update", async (req, res) => {
   }
 
   let sql = `UPDATE events SET ${additional.join(", ")} WHERE identifier = '${
-    req.body.event.identifier
+    req.query.identifier
   }';`;
   db.run(sql, (err) => {
     if (err) {
@@ -401,87 +402,108 @@ app.post("/api/:key/event/checkin", async (req, res) => {
   //get body data
   var errors = [];
 
-  if (!req.body.event) {
-    errors.push("Must include an event");
-  } else {
-    if (!req.body.event.identifier) {
-      errors.push("Event must include an identifier property");
-    }
+  if (!req.query.eventIdentifier) {
+    errors.push("Query must include an eventIdentifier property");
   }
 
-  if (!req.body.user) {
-    errors.push("Must include a user");
-  } else {
-    if (!req.body.user.barcode) {
-      errors.push("User must include a barcode property");
-    }
+  if (!req.query.userBarcode) {
+    errors.push("Query must include a userBarcode property");
   }
+
   if (errors.length) {
     res.status(400).json({ error: errors.join(", ") });
     return;
   }
-
-  //check whether event is enabled
-  let sql5 = `SELECT status FROM events WHERE identifier = '${req.body.event.identifier}'`;
-  db.all(sql5, (err, rows) => {
-    if (err) {
-      res.status(400).json({ error: err.message });
-      return;
-    }
-    let status = rows[0].status;
-    if (!status) {
-      res.status(400).json({ error: "Event has been disabled" });
-      return;
-    } else {
-      //check whether user already checked in
-      let sql2 = `SELECT COUNT(*) as count FROM event_${req.body.event.identifier} WHERE barcodeNum = '${req.body.user.barcode}'`;
-      db.all(sql2, (err, rows) => {
+  try {
+    //check whether event exists
+    let sql5 = `SELECT COUNT(*) as count FROM events WHERE identifier = '${req.query.eventIdentifier}'`;
+    db.all(sql5, (err, rows) => {
+      if (err) {
+        res.status(400).json({ error: err.message });
+        return;
+      }
+      if (rows[0].count <= 0) {
+        res.status(400).json({ error: "Event not found" });
+        return;
+      }
+      //check whether event is enabled
+      let sql5 = `SELECT status FROM events WHERE identifier = '${req.query.eventIdentifier}'`;
+      db.all(sql5, (err, rows) => {
         if (err) {
           res.status(400).json({ error: err.message });
           return;
         }
-        if (rows[0].count) {
-          let sql3 = `SELECT COUNT(*) as count FROM event_${req.body.event.identifier} WHERE barcodeNum = '${req.body.user.barcode}' AND attended = '1'`;
-          db.all(sql3, (err, rows1) => {
+        let status = rows[0].status;
+        if (!status) {
+          res.status(400).json({ error: "Event has been disabled" });
+          return;
+        } else {
+          //check whether user already checked in
+          let sql2 = `SELECT COUNT(*) as count FROM event_${req.query.eventIdentifier} WHERE barcodeNum = '${req.query.userBarcode}'`;
+          db.all(sql2, (err, rows) => {
             if (err) {
               res.status(400).json({ error: err.message });
               return;
             }
-            if (rows1[0].count) {
-              res
-                .status(400)
-                .json({ error: "User is already checked in for this event" });
-              return;
-            } else {
-              //update exisiting checkin
-              let sql4 = `UPDATE event_${req.body.event.identifier} SET  attended = '1', lastModified = strftime('%Y-%m-%d %H:%M:%S', 'now'), modifiedBy = '${prefix}' WHERE barcodeNum = '${req.body.user.barcode}';`;
-              db.run(sql4, (err) => {
+            if (rows[0].count) {
+              let sql3 = `SELECT COUNT(*) as count FROM event_${req.query.eventIdentifier} WHERE barcodeNum = '${req.query.userBarcode}' AND attended = '1'`;
+              db.all(sql3, (err, rows1) => {
                 if (err) {
                   res.status(400).json({ error: err.message });
                   return;
                 }
-                res.json({
-                  message: "success",
+                if (rows1[0].count) {
+                  res.status(400).json({
+                    error: "User is already checked in for this event",
+                  });
+                  return;
+                } else {
+                  //update exisiting checkin
+                  let sql4 = `UPDATE event_${req.query.eventIdentifier} SET  attended = '1', lastModified = strftime('%Y-%m-%d %H:%M:%S', 'now'), modifiedBy = '${prefix}' WHERE barcodeNum = '${req.query.userBarcode}';`;
+                  db.run(sql4, (err) => {
+                    if (err) {
+                      res.status(400).json({ error: err.message });
+                      return;
+                    }
+                    res.json({
+                      message: "success",
+                    });
+                  });
+                }
+              });
+            } else {
+              //check whether user exists
+              let sql7 = `SELECT COUNT(*) as count FROM users WHERE barcodeNum = '${req.query.userBarcode}';`;
+              db.all(sql7, (err, rows) => {
+                if (err) {
+                  res.status(400).json({ error: err.message });
+                  return;
+                }
+                if (rows[0].count <= 0) {
+                  res.status(400).json({ error: "User not found" });
+                  return;
+                }
+                //insert into event table
+                let sql = `INSERT INTO event_${req.query.eventIdentifier} (barcodeNum, attended, lastModified, modifiedBy) VALUES ('${req.query.userBarcode}', '1', strftime('%Y-%m-%d %H:%M:%S', 'now'), '${prefix}');`;
+                db.run(sql, (err) => {
+                  if (err) {
+                    res.status(400).json({ error: err.message });
+                    return;
+                  }
+                  res.json({
+                    message: "success",
+                  });
                 });
               });
             }
           });
-        } else {
-          //insert into event table
-          let sql = `INSERT INTO event_${req.body.event.identifier} (barcodeNum, attended, lastModified, modifiedBy) VALUES ('${req.body.user.barcode}', '1', strftime('%Y-%m-%d %H:%M:%S', 'now'), '${prefix}');`;
-          db.run(sql, (err) => {
-            if (err) {
-              res.status(400).json({ error: err.message });
-              return;
-            }
-            res.json({
-              message: "success",
-            });
-          });
         }
       });
-    }
-  });
+    });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+    return;
+  }
 });
 
 /**
@@ -502,28 +524,21 @@ app.post("/api/:key/event/uncheckin", async (req, res) => {
   //get body data
   var errors = [];
 
-  if (!req.body.event) {
-    errors.push("Must include an event");
-  } else {
-    if (!req.body.event.identifier) {
-      errors.push("Event must include an identifier property");
-    }
+  if (!req.query.eventIdentifier) {
+    errors.push("Query must include an eventIdentifier property");
   }
 
-  if (!req.body.user) {
-    errors.push("Must include a user");
-  } else {
-    if (!req.body.user.barcode) {
-      errors.push("User must include a barcode property");
-    }
+  if (!req.query.userBarcode) {
+    errors.push("Query must include a userBarcode property");
   }
+
   if (errors.length) {
     res.status(400).json({ error: errors.join(", ") });
     return;
   }
 
   //check whether event is enabled
-  let sql3 = `SELECT status FROM events WHERE identifier = '${req.body.event.identifier}'`;
+  let sql3 = `SELECT status FROM events WHERE identifier = '${req.query.eventIdentifier}'`;
   db.all(sql3, (err, rows) => {
     if (err) {
       res.status(400).json({ error: err.message });
@@ -535,7 +550,7 @@ app.post("/api/:key/event/uncheckin", async (req, res) => {
       return;
     } else {
       //insert into event table table
-      let sql = `UPDATE event_${req.body.event.identifier} SET  attended = '0', lastModified = strftime('%Y-%m-%d %H:%M:%S', 'now'), modifiedBy = '${prefix}' WHERE barcodeNum = '${req.body.user.barcode}';`;
+      let sql = `UPDATE event_${req.query.eventIdentifier} SET  attended = '0', lastModified = strftime('%Y-%m-%d %H:%M:%S', 'now'), modifiedBy = '${prefix}' WHERE barcodeNum = '${req.query.userBarcode}';`;
       db.run(sql, (err) => {
         if (err) {
           res.status(400).json({ error: err.message });
@@ -567,12 +582,8 @@ app.get("/api/:key/event/status", async (req, res) => {
   //get body data
   var errors = [];
 
-  if (!req.body.event) {
-    errors.push("Must include an event");
-  } else {
-    if (!req.body.event.identifier) {
-      errors.push("Event must include an identifier property");
-    }
+  if (!req.query.eventIdentifier) {
+    errors.push("Query must include an eventIdentifier property");
   }
 
   if (errors.length) {
@@ -581,7 +592,7 @@ app.get("/api/:key/event/status", async (req, res) => {
   }
 
   //select all attending users
-  let sql = `SELECT COUNT(*) as count FROM event_${req.body.event.identifier} WHERE attended = '1'`;
+  let sql = `SELECT COUNT(*) as count FROM event_${req.query.eventIdentifier} WHERE attended = '1'`;
   db.all(sql, (err, rows) => {
     if (err) {
       res.status(400).json({ error: err.message });
@@ -596,7 +607,7 @@ app.get("/api/:key/event/status", async (req, res) => {
       }
       let countTotal = rows[0].count;
 
-      let sql3 = `SELECT status FROM events WHERE identifier = '${req.body.event.identifier}'`;
+      let sql3 = `SELECT status FROM events WHERE identifier = '${req.query.eventIdentifier}'`;
       db.all(sql3, (err, rows) => {
         if (err) {
           res.status(400).json({ error: err.message });
@@ -628,28 +639,21 @@ app.get("/api/:key/event/checkedin", async (req, res) => {
   //get body data
   var errors = [];
 
-  if (!req.body.event) {
-    errors.push("Must include an event");
-  } else {
-    if (!req.body.event.identifier) {
-      errors.push("Event must include an identifier property");
-    }
+  if (!req.query.eventIdentifier) {
+    errors.push("Query must include an eventIdentifier property");
   }
 
-  if (!req.body.user) {
-    errors.push("Must include a user");
-  } else {
-    if (!req.body.user.barcode) {
-      errors.push("User must include a barcode property");
-    }
+  if (!req.query.userBarcode) {
+    errors.push("Query must include a userBarcode property");
   }
+
   if (errors.length) {
     res.status(400).json({ error: errors.join(", ") });
     return;
   }
 
   //get whether user is checked in
-  let sql = `SELECT COUNT(*) as count FROM event_${req.body.event.identifier} WHERE barcodeNum = '${req.body.user.barcode}' AND attended = '1';`;
+  let sql = `SELECT COUNT(*) as count FROM event_${req.query.eventIdentifier} WHERE barcodeNum = '${req.query.userBarcode}' AND attended = '1';`;
   db.all(sql, (err, rows) => {
     if (err) {
       res.status(400).json({ error: err.message });
@@ -705,18 +709,15 @@ app.post("/api/:key/user/create", async (req, res) => {
   //get body data
   var errors = [];
 
-  if (!req.body.user) {
-    errors.push("must include a new user");
-  } else {
-    if (!req.body.user.name) {
-      errors.push("New users must have a name");
-    }
-    if (!req.body.user.email) {
-      errors.push("New users must have an email");
-    } else if (!req.body.user.email.includes("@")) {
-      errors.push("User email not in valid format");
-    }
+  if (!req.query.userName) {
+    errors.push("Query must include userName property");
   }
+  if (!req.query.userEmail) {
+    errors.push("Query must include userEmail property");
+  } else if (!req.query.userEmail.includes("@")) {
+    errors.push("User email not in valid format");
+  }
+
   if (errors.length) {
     res.status(400).json({ error: errors.join(", ") });
     return;
@@ -724,7 +725,7 @@ app.post("/api/:key/user/create", async (req, res) => {
   let barcode = generateApiKey({ length: 11, pool: "0123456789" });
 
   //insert into users table
-  let sql = `INSERT INTO users (name, email, barcodeNum) VALUES ('${req.body.user.name}', '${req.body.user.email}', '${barcode}');`;
+  let sql = `INSERT INTO users (name, email, barcodeNum) VALUES ('${req.query.userName}', '${req.query.userEmail}', '${barcode}');`;
   db.run(sql, (err) => {
     if (err) {
       res.status(400).json({ error: err.message });
