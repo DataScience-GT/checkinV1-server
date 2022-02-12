@@ -233,33 +233,30 @@ app.post("/api/:key/event/create", async (req, res) => {
   var errors = [];
   var status = 0;
   var statusChanged = false;
-  if (!req.body.event) {
-    errors.push("must include a new event");
-  } else {
-    if (!req.body.event.name) {
-      errors.push("New events must have a name");
-    }
-    if (!req.body.event.identifier) {
-      errors.push("New events must have an identifer");
-    } else if (req.body.event.identifier.includes(" ")) {
-      errors.push("Event identifiers cannot include spaces");
-    } else if (req.body.event.identifier.length > 24) {
-      errors.push("Event identifiers cannot be longer than 24 characters");
-    }
+  if (!req.body.event.name) {
+    errors.push("New events must have a name");
+  }
+  if (!req.body.event.identifier) {
+    errors.push("New events must have an identifer");
+  } else if (req.body.event.identifier.includes(" ")) {
+    errors.push("Event identifiers cannot include spaces");
+  } else if (req.body.event.identifier.length > 24) {
+    errors.push("Event identifiers cannot be longer than 24 characters");
+  }
 
-    if (req.body.event.status) {
-      if (
-        0 + req.body.event.status > 1 ||
-        0 + req.body.event.status < 0 ||
-        !Number.isInteger(req.body.event.status)
-      ) {
-        errors.push("Event status can only have values 0,1");
-      } else {
-        status = req.body.event.status;
-        statusChanged = true;
-      }
+  if (req.body.event.status) {
+    if (
+      0 + req.body.event.status > 1 ||
+      0 + req.body.event.status < 0 ||
+      !Number.isInteger(req.body.event.status)
+    ) {
+      errors.push("Event status can only have values 0,1");
+    } else {
+      status = req.body.event.status;
+      statusChanged = true;
     }
   }
+
   if (errors.length) {
     res.status(400).json({ error: errors.join(", ") });
     return;
