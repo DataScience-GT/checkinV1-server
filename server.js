@@ -555,7 +555,7 @@ app.post("/api/:key/event/uncheckin", async (req, res) => {
 /**
  * @param body user and event
  */
-app.post("/api/:key/event/status", async (req, res) => {
+app.get("/api/:key/event/status", async (req, res) => {
   //check for prerequisites
   let key = req.params.key;
   try {
