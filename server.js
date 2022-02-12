@@ -247,8 +247,12 @@ app.post("/api/:key/event/create", async (req, res) => {
       errors.push("Event identifiers cannot be longer than 24 characters");
     }
 
-    if(req.body.event.status) {
-      if(0+req.body.event.status > 1 || 0+req.body.event.status < 0 || !Number.isInteger(req.body.event.status)) {
+    if (req.body.event.status) {
+      if (
+        0 + req.body.event.status > 1 ||
+        0 + req.body.event.status < 0 ||
+        !Number.isInteger(req.body.event.status)
+      ) {
         errors.push("Event status can only have values 0,1");
       } else {
         status = req.body.event.status;
@@ -274,8 +278,12 @@ app.post("/api/:key/event/create", async (req, res) => {
     values.push(`'${status}'`);
   }
   let sql = `INSERT INTO events (name, identifier) VALUES ('${req.body.event.name}', '${req.body.event.identifier}');`;
-  if(additional.length > 0) {
-    sql = `INSERT INTO events (name, identifier, ${additional.join(", ")}) VALUES ('${req.body.event.name}', '${req.body.event.identifier}', ${values.join(", ")});`;
+  if (additional.length > 0) {
+    sql = `INSERT INTO events (name, identifier, ${additional.join(
+      ", "
+    )}) VALUES ('${req.body.event.name}', '${
+      req.body.event.identifier
+    }', ${values.join(", ")});`;
   }
   db.run(sql, (err) => {
     if (err) {
@@ -323,7 +331,6 @@ app.post("/api/:key/event/update", async (req, res) => {
   if (!req.body.event) {
     errors.push("must include an event to update");
   } else {
-
     if (!req.body.event.identifier) {
       errors.push("Events must have an identifer");
     } else if (req.body.event.identifier.includes(" ")) {
@@ -332,8 +339,12 @@ app.post("/api/:key/event/update", async (req, res) => {
       errors.push("Event identifiers cannot be longer than 24 characters");
     }
 
-    if(req.body.event.status) {
-      if(0+req.body.event.status > 1 || 0+req.body.event.status < 0 || !Number.isInteger(req.body.event.status)) {
+    if (req.body.event.status) {
+      if (
+        0 + req.body.event.status > 1 ||
+        0 + req.body.event.status < 0 ||
+        !Number.isInteger(req.body.event.status)
+      ) {
         errors.push("Event status can only have values 0,1");
       } else {
         status = req.body.event.status;
@@ -345,7 +356,7 @@ app.post("/api/:key/event/update", async (req, res) => {
     res.status(400).json({ error: errors.join(", ") });
     return;
   }
-  
+
   var additional = [];
   if (req.body.event.name) {
     additional.push(`name = '${req.body.event.name}'`);
@@ -356,12 +367,14 @@ app.post("/api/:key/event/update", async (req, res) => {
   if (statusChanged) {
     additional.push(`status = '${status}'`);
   }
-  if(additional.length <= 0) {
+  if (additional.length <= 0) {
     res.status(400).json({ error: "Missing properties of event to update" });
     return;
   }
 
-  let sql = `UPDATE events SET ${additional.join(", ")} WHERE identifier = '${req.body.event.identifier}';`;
+  let sql = `UPDATE events SET ${additional.join(", ")} WHERE identifier = '${
+    req.body.event.identifier
+  }';`;
   db.run(sql, (err) => {
     if (err) {
       res.status(400).json({ error: err.message });
@@ -374,9 +387,288 @@ app.post("/api/:key/event/update", async (req, res) => {
 });
 
 /**
+ * @param body user and event
+ */
+app.post("/api/:key/event/checkin", async (req, res) => {
+  //check for prerequisites
+  let key = req.params.key;
+  try {
+    let result = await checkAPIkey(key, "event.checkin");
+  } catch (err) {
+    res.status(400).json({ error: err });
+    return;
+  }
+
+  let prefix = key.split(".")[0];
+
+  //get body data
+  var errors = [];
+
+  if (!req.body.event) {
+    errors.push("Must include an event");
+  } else {
+    if (!req.body.event.identifier) {
+      errors.push("Event must include an identifier property");
+    }
+  }
+
+  if (!req.body.user) {
+    errors.push("Must include a user");
+  } else {
+    if (!req.body.user.barcode) {
+      errors.push("User must include a barcode property");
+    }
+  }
+  if (errors.length) {
+    res.status(400).json({ error: errors.join(", ") });
+    return;
+  }
+
+  //check whether event is enabled
+  let sql5 = `SELECT status FROM events WHERE identifier = '${req.body.event.identifier}'`;
+  db.all(sql5, (err, rows) => {
+    if (err) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
+    let status = rows[0].status;
+    if (!status) {
+      res.status(400).json({ error: "Event has been disabled" });
+      return;
+    } else {
+      //check whether user already checked in
+      let sql2 = `SELECT COUNT(*) as count FROM event_${req.body.event.identifier} WHERE barcodeNum = '${req.body.user.barcode}'`;
+      db.all(sql2, (err, rows) => {
+        if (err) {
+          res.status(400).json({ error: err.message });
+          return;
+        }
+        if (rows[0].count) {
+          let sql3 = `SELECT COUNT(*) as count FROM event_${req.body.event.identifier} WHERE barcodeNum = '${req.body.user.barcode}' AND attended = '1'`;
+          db.all(sql3, (err, rows1) => {
+            if (err) {
+              res.status(400).json({ error: err.message });
+              return;
+            }
+            if (rows1[0].count) {
+              res
+                .status(400)
+                .json({ error: "User is already checked in for this event" });
+              return;
+            } else {
+              //update exisiting checkin
+              let sql4 = `UPDATE event_${req.body.event.identifier} SET  attended = '1', lastModified = strftime('%Y-%m-%d %H:%M:%S', 'now'), modifiedBy = '${prefix}' WHERE barcodeNum = '${req.body.user.barcode}';`;
+              db.run(sql4, (err) => {
+                if (err) {
+                  res.status(400).json({ error: err.message });
+                  return;
+                }
+                res.json({
+                  message: "success",
+                });
+              });
+            }
+          });
+        } else {
+          //insert into event table
+          let sql = `INSERT INTO event_${req.body.event.identifier} (barcodeNum, attended, lastModified, modifiedBy) VALUES ('${req.body.user.barcode}', '1', strftime('%Y-%m-%d %H:%M:%S', 'now'), '${prefix}');`;
+          db.run(sql, (err) => {
+            if (err) {
+              res.status(400).json({ error: err.message });
+              return;
+            }
+            res.json({
+              message: "success",
+            });
+          });
+        }
+      });
+    }
+  });
+});
+
+/**
+ * @param body user and event
+ */
+app.post("/api/:key/event/uncheckin", async (req, res) => {
+  //check for prerequisites
+  let key = req.params.key;
+  try {
+    let result = await checkAPIkey(key, "event.uncheckin");
+  } catch (err) {
+    res.status(400).json({ error: err });
+    return;
+  }
+
+  let prefix = key.split(".")[0];
+
+  //get body data
+  var errors = [];
+
+  if (!req.body.event) {
+    errors.push("Must include an event");
+  } else {
+    if (!req.body.event.identifier) {
+      errors.push("Event must include an identifier property");
+    }
+  }
+
+  if (!req.body.user) {
+    errors.push("Must include a user");
+  } else {
+    if (!req.body.user.barcode) {
+      errors.push("User must include a barcode property");
+    }
+  }
+  if (errors.length) {
+    res.status(400).json({ error: errors.join(", ") });
+    return;
+  }
+
+  //check whether event is enabled
+  let sql3 = `SELECT status FROM events WHERE identifier = '${req.body.event.identifier}'`;
+  db.all(sql3, (err, rows) => {
+    if (err) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
+    let status = rows[0].status;
+    if (!status) {
+      res.status(400).json({ error: "Event has been disabled" });
+      return;
+    } else {
+      //insert into event table table
+      let sql = `UPDATE event_${req.body.event.identifier} SET  attended = '0', lastModified = strftime('%Y-%m-%d %H:%M:%S', 'now'), modifiedBy = '${prefix}' WHERE barcodeNum = '${req.body.user.barcode}';`;
+      db.run(sql, (err) => {
+        if (err) {
+          res.status(400).json({ error: err.message });
+          return;
+        }
+        res.json({
+          message: "success",
+        });
+      });
+    }
+  });
+});
+
+/**
+ * @param body user and event
+ */
+app.post("/api/:key/event/status", async (req, res) => {
+  //check for prerequisites
+  let key = req.params.key;
+  try {
+    let result = await checkAPIkey(key, "event.status");
+  } catch (err) {
+    res.status(400).json({ error: err });
+    return;
+  }
+
+  let prefix = key.split(".")[0];
+
+  //get body data
+  var errors = [];
+
+  if (!req.body.event) {
+    errors.push("Must include an event");
+  } else {
+    if (!req.body.event.identifier) {
+      errors.push("Event must include an identifier property");
+    }
+  }
+
+  if (errors.length) {
+    res.status(400).json({ error: errors.join(", ") });
+    return;
+  }
+
+  //select all attending users
+  let sql = `SELECT COUNT(*) as count FROM event_${req.body.event.identifier} WHERE attended = '1'`;
+  db.all(sql, (err, rows) => {
+    if (err) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
+    let countAttended = rows[0].count;
+    let sql2 = `SELECT COUNT(*) as count FROM users`;
+    db.all(sql2, (err, rows) => {
+      if (err) {
+        res.status(400).json({ error: err.message });
+        return;
+      }
+      let countTotal = rows[0].count;
+
+      let sql3 = `SELECT status FROM events WHERE identifier = '${req.body.event.identifier}'`;
+      db.all(sql3, (err, rows) => {
+        if (err) {
+          res.status(400).json({ error: err.message });
+          return;
+        }
+        let status = rows[0].status;
+        res.json({
+          message: "success",
+          data: { attended: countAttended, total: countTotal, status: status },
+        });
+      });
+    });
+  });
+});
+
+/**
+ * @return whether user is checked in to event
+ */
+app.get("/api/:key/event/checkedin", async (req, res) => {
+  //check for prerequisites
+  let key = req.params.key;
+  try {
+    let result = await checkAPIkey(key, "event.checkedin");
+  } catch (err) {
+    res.status(400).json({ error: err });
+    return;
+  }
+
+  //get body data
+  var errors = [];
+
+  if (!req.body.event) {
+    errors.push("Must include an event");
+  } else {
+    if (!req.body.event.identifier) {
+      errors.push("Event must include an identifier property");
+    }
+  }
+
+  if (!req.body.user) {
+    errors.push("Must include a user");
+  } else {
+    if (!req.body.user.barcode) {
+      errors.push("User must include a barcode property");
+    }
+  }
+  if (errors.length) {
+    res.status(400).json({ error: errors.join(", ") });
+    return;
+  }
+
+  //get whether user is checked in
+  let sql = `SELECT COUNT(*) as count FROM event_${req.body.event.identifier} WHERE barcodeNum = '${req.body.user.barcode}' AND attended = '1';`;
+  db.all(sql, (err, rows) => {
+    if (err) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
+    res.json({
+      message: "success",
+      data: rows,
+    });
+  });
+});
+
+/**
  * @return list of users
  */
- app.get("/api/:key/user/list", async (req, res) => {
+app.get("/api/:key/user/list", async (req, res) => {
   //check for prerequisites
   let key = req.params.key;
   try {
@@ -398,6 +690,55 @@ app.post("/api/:key/event/update", async (req, res) => {
       data: rows,
     });
   });
+});
+
+/**
+ * @param body user to create
+ */
+app.post("/api/:key/user/create", async (req, res) => {
+  //check for prerequisites
+  let key = req.params.key;
+  try {
+    let result = await checkAPIkey(key, "user.create");
+  } catch (err) {
+    res.status(400).json({ error: err });
+    return;
+  }
+
+  //get body data
+  var errors = [];
+
+  if (!req.body.user) {
+    errors.push("must include a new user");
+  } else {
+    if (!req.body.user.name) {
+      errors.push("New users must have a name");
+    }
+    if (!req.body.user.email) {
+      errors.push("New users must have an email");
+    } else if (!req.body.user.email.includes("@")) {
+      errors.push("User email not in valid format");
+    }
+  }
+  if (errors.length) {
+    res.status(400).json({ error: errors.join(", ") });
+    return;
+  }
+  let barcode = generateApiKey({ length: 11, pool: "0123456789" });
+
+  //insert into users table
+  let sql = `INSERT INTO users (name, email, barcodeNum) VALUES ('${req.body.user.name}', '${req.body.user.email}', '${barcode}');`;
+  db.run(sql, (err) => {
+    if (err) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
+    res.json({
+      message: "success",
+    });
+  });
+
+  //res.json({data: barcode});
 });
 
 /* ---------- TEMPLATE -------------'
