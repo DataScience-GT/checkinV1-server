@@ -739,6 +739,60 @@ app.post("/api/:key/user/create", async (req, res) => {
   //res.json({data: barcode});
 });
 
+app.post("/api/:key/user/update", async (req, res) => {
+  //check for prerequisites
+  let key = req.params.key;
+  try {
+    let result = await checkAPIkey(key, "user.update");
+  } catch (err) {
+    res.status(400).json({ error: err });
+    return;
+  }
+
+  //get body data
+  var errors = [];
+
+  if (!req.query.barcodeNum) {
+    errors.push("Query must include barcodeNum property");
+  }
+  if (!req.query.userName && !req.query.userEmail) {
+    errors.push("Query must include userName or userEmail property");
+  }
+  if (req.query.userEmail && !req.query.userEmail.includes("@")) {
+    errors.push("User email not in valid format");
+  }
+
+  if (errors.length) {
+    res.status(400).json({ error: errors.join(", ") });
+    return;
+  }
+
+  var additional = [];
+  if (req.query.userName) {
+    additional.push(`name = '${req.query.userName}'`);
+  }
+  if (req.query.userEmail) {
+    additional.push(`email = '${req.query.userEmail}'`);
+  }
+  if (additional.length <= 0) {
+    res.status(400).json({ error: "Missing properties of user to update" });
+    return;
+  }
+
+  let sql = `UPDATE users SET ${additional.join(", ")} WHERE barcodeNum = '${
+    req.query.barcodeNum
+  }';`;
+  db.run(sql, (err) => {
+    if (err) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
+    res.json({
+      message: "success",
+    });
+  });
+});
+
 /* ---------- TEMPLATE -------------'
 app.get("/api/:key/", async (req, res) => {
   //check for prerequisites
