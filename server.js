@@ -9,6 +9,7 @@ const port = 5000;
 const generateApiKey = require("generate-api-key");
 const nodemailer = require("nodemailer");
 const qr = require("qrcode");
+const fs = require('fs');
 
 //load the database
 const db = require("./db/database.js");
@@ -831,38 +832,72 @@ app.get("/api/:key/user/email", async (req, res) => {
     //send email with barcode
 
     //generate qr code
-    let qrURL = "";
-    qr.toString("I am a pony!", { type: "terminal" }, function (err, url) {
+    //let qrcode = "";
+    qr.toDataURL(req.query.barcodeNum, function (err, url) {
+      if (err) {
+        res.status(400).json({ error: err });
+        return;
+      }
+      //console.log(url)
+      let transporter = nodemailer.createTransport({
+        host: "smtp.ionos.com",
+        port: 587,
+        auth: {
+          user: "hello@hacklytics2022.com",
+          pass: "w2*jU?]@v?pRJ]n",
+        },
+        dkim: {
+          domainName: "hacklytics2022.com",
+          keySelector: "key1",
+          privateKey: fs.readFileSync("./certificates/dkim/dkim.pem", "utf8"),
+          cacheDir: "/tmp",
+          cacheTreshold: 100 * 1024,
+        },
+      });
+      //console.log(url)
+      message = {
+        from: "hello@hacklytics2022.com",
+        to: rows[0].email,
+        subject: "qr code",
+        html: `<html><body style="background-color: white;"><h1>Here is your QR code to check in.</h1><img width="200" height="200" src="cid:qrcode@send" /></body></html>`,
+        attachments: [
+          {
+            // encoded string as an attachment
+            filename: "image.png",
+            path: url,
+            cid: "qrcode@send",
+          },
+        ],
+      };
+      transporter.sendMail(message, function (err, info) {
+        if (err) {
+          res.status(400).json({ error: err });
+          return;
+        } else {
+          res.json({ message: "success" });
+        }
+      });
+    });
+    /*qr.toCanvas(
+      "test123",
+      { errorCorrectionLevel: "H" },
+      function (err, canvas) {
+        if (err.length) {
+          res.status(400).json({ error: err });
+          return;
+        }
+        console.log(canvas);
+        qrCanvas = canvas;
+      }
+    );*/
+    /*qr.toString("I am a pony!", { type: "terminal" }, function (err, url) {
       if (err) {
         res.status(400).json({ error: "Error generating QR code" });
         return;
       }
       qrURL = url;
     });
-
-    let transporter = nodemailer.createTransport({
-      host: "smtp.ionos.com",
-      port: 587,
-      auth: {
-        user: "hello@hacklytics2022.com",
-        pass: "w2*jU?]@v?pRJ]n",
-      },
-    });
-
-    message = {
-      from: "hello@hacklytics2022.com",
-      to: rows[0].email,
-      subject: "testdsjkhfksd",
-      text: `${qrURL}`,
-    };
-    transporter.sendMail(message, function (err, info) {
-      if (err) {
-        res.status(400).json({ error: err });
-        return;
-      } else {
-        res.json({ message: "success" });
-      }
-    });
+    console.log(qrURL)*/
   });
 });
 
