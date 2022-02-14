@@ -907,7 +907,9 @@ app.get("/api/:key/account/login", async (req, res) => {
       //get time when expires
       let expires = new Date(new Date().getTime() + 60 * 60 * 1000); //add 1 day(60 sec dev)
       //expires.
-      let sql2 = `INSERT INTO session (type, token, expires, username) VALUES ('${type}', '${token}', '${expires.toISOString()}', '${req.query.username}')`;
+      let sql2 = `INSERT INTO session (type, token, expires, username) VALUES ('${type}', '${token}', '${expires.toISOString()}', '${
+        req.query.username
+      }')`;
       db.run(sql2, (err) => {
         if (err) {
           res.status(400).json({ error: err.message });
@@ -947,7 +949,7 @@ app.get("/api/:key/account/session", async (req, res) => {
     return;
   }
 
-  let sql = `SELECT COUNT(*) as count, expires FROM session WHERE token = '${req.query.token}'`;
+  let sql = `SELECT COUNT(*) as count, expires, type FROM session WHERE token = '${req.query.token}'`;
   db.all(sql, (err, rows) => {
     if (err) {
       res.status(400).json({ error: err.message });
@@ -966,6 +968,7 @@ app.get("/api/:key/account/session", async (req, res) => {
     }
     res.json({
       message: "success",
+      data: { type: rows[0].type },
     });
   });
 });
