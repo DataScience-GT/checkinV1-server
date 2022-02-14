@@ -739,6 +739,9 @@ app.post("/api/:key/user/create", async (req, res) => {
   //res.json({data: barcode});
 });
 
+/**
+ * @param body user to update
+ */
 app.post("/api/:key/user/update", async (req, res) => {
   //check for prerequisites
   let key = req.params.key;
@@ -789,6 +792,112 @@ app.post("/api/:key/user/update", async (req, res) => {
     }
     res.json({
       message: "success",
+    });
+  });
+});
+
+/**
+ * @param body account to create
+ */
+app.post("/api/:key/account/create", async (req, res) => {
+  //check for prerequisites
+  let key = req.params.key;
+  try {
+    let result = await checkAPIkey(key, "account.create");
+  } catch (err) {
+    res.status(400).json({ error: err });
+    return;
+  }
+
+  //get body data
+  var errors = [];
+
+  if (!req.query.username) {
+    errors.push("Query must include username property");
+  } else if (req.query.username.includes(' ')) {
+    errors.push("Username cannot include spaces");
+  } else if (req.query.username.length > 16) {
+    errors.push("Username cannot be longer than 16 characters");
+  }
+
+  if (!req.query.password) {
+    errors.push("Query must include password property");
+  } else if (req.query.password.includes(' ')) {
+    errors.push("Password cannot include spaces");
+  } else if (req.query.password.length > 16) {
+    errors.push("Password cannot be longer than 16 characters");
+  }
+
+  let validTypes = ["default", "mod", "admin"]
+  if (!req.query.type) {
+    errors.push("Query must include type property");
+  } else if (!validTypes.includes(req.query.type.toLowerCase())) {
+    errors.push("Type must be of value 'default', 'mod', or 'admin'");
+  }
+
+  if (errors.length) {
+    res.status(400).json({ error: errors.join(", ") });
+    return;
+  }
+
+  let sql = `INSERT INTO login (type, username, password) VALUES ('${req.query.type}', '${req.query.username}', '${md5(req.query.password)}');`;
+  db.run(sql, (err) => {
+    if (err) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
+    res.json({
+      message: "success",
+    });
+  });
+});
+
+/**
+ * @param body account to login to
+ */
+ app.get("/api/:key/account/login", async (req, res) => {
+  //check for prerequisites
+  let key = req.params.key;
+  try {
+    let result = await checkAPIkey(key, "account.login");
+  } catch (err) {
+    res.status(400).json({ error: err });
+    return;
+  }
+
+  //get body data
+  var errors = [];
+
+  if (!req.query.username) {
+    errors.push("Query must include username property");
+  } else if (req.query.username.includes(' ')) {
+    errors.push("Username cannot include spaces");
+  } else if (req.query.username.length > 16) {
+    errors.push("Username cannot be longer than 16 characters");
+  }
+
+  if (!req.query.password) {
+    errors.push("Query must include password property");
+  } else if (req.query.password.includes(' ')) {
+    errors.push("Password cannot include spaces");
+  } else if (req.query.password.length > 16) {
+    errors.push("Password cannot be longer than 16 characters");
+  }
+
+  if (errors.length) {
+    res.status(400).json({ error: errors.join(", ") });
+    return;
+  }
+
+  let sql = `SELECT COUNT(*) as count FROM login WHERE username = '${req.query.username}' and password = '${md5(req.query.password)}';`;
+  db.all(sql, (err, rows) => {
+    if (err) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
+    res.json({
+      message: "success",
+      data: rows[0]
     });
   });
 });
