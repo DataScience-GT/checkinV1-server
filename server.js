@@ -915,6 +915,9 @@ app.get("/api/:key/account/login", async (req, res) => {
         }
         res.json({ message: "success", token: token, type: type });
       });
+    } else {
+      res.status(400).json({ error: "Invalid username or password" });
+      return;
     }
   });
 });
