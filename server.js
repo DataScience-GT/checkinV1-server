@@ -814,7 +814,7 @@ app.post("/api/:key/account/create", async (req, res) => {
 
   if (!req.query.username) {
     errors.push("Query must include username property");
-  } else if (req.query.username.includes(' ')) {
+  } else if (req.query.username.includes(" ")) {
     errors.push("Username cannot include spaces");
   } else if (req.query.username.length > 16) {
     errors.push("Username cannot be longer than 16 characters");
@@ -822,13 +822,13 @@ app.post("/api/:key/account/create", async (req, res) => {
 
   if (!req.query.password) {
     errors.push("Query must include password property");
-  } else if (req.query.password.includes(' ')) {
+  } else if (req.query.password.includes(" ")) {
     errors.push("Password cannot include spaces");
   } else if (req.query.password.length > 16) {
     errors.push("Password cannot be longer than 16 characters");
   }
 
-  let validTypes = ["default", "mod", "admin"]
+  let validTypes = ["default", "mod", "admin"];
   if (!req.query.type) {
     errors.push("Query must include type property");
   } else if (!validTypes.includes(req.query.type.toLowerCase())) {
@@ -840,7 +840,9 @@ app.post("/api/:key/account/create", async (req, res) => {
     return;
   }
 
-  let sql = `INSERT INTO login (type, username, password) VALUES ('${req.query.type}', '${req.query.username}', '${md5(req.query.password)}');`;
+  let sql = `INSERT INTO login (type, username, password) VALUES ('${
+    req.query.type
+  }', '${req.query.username}', '${md5(req.query.password)}');`;
   db.run(sql, (err) => {
     if (err) {
       res.status(400).json({ error: err.message });
@@ -855,7 +857,7 @@ app.post("/api/:key/account/create", async (req, res) => {
 /**
  * @param body account to login to
  */
- app.get("/api/:key/account/login", async (req, res) => {
+app.get("/api/:key/account/login", async (req, res) => {
   //check for prerequisites
   let key = req.params.key;
   try {
@@ -870,7 +872,7 @@ app.post("/api/:key/account/create", async (req, res) => {
 
   if (!req.query.username) {
     errors.push("Query must include username property");
-  } else if (req.query.username.includes(' ')) {
+  } else if (req.query.username.includes(" ")) {
     errors.push("Username cannot include spaces");
   } else if (req.query.username.length > 16) {
     errors.push("Username cannot be longer than 16 characters");
@@ -878,7 +880,7 @@ app.post("/api/:key/account/create", async (req, res) => {
 
   if (!req.query.password) {
     errors.push("Query must include password property");
-  } else if (req.query.password.includes(' ')) {
+  } else if (req.query.password.includes(" ")) {
     errors.push("Password cannot include spaces");
   } else if (req.query.password.length > 16) {
     errors.push("Password cannot be longer than 16 characters");
@@ -889,15 +891,78 @@ app.post("/api/:key/account/create", async (req, res) => {
     return;
   }
 
-  let sql = `SELECT COUNT(*) as count FROM login WHERE username = '${req.query.username}' and password = '${md5(req.query.password)}';`;
+  let sql = `SELECT COUNT(*) as count, type FROM login WHERE UPPER(username) = '${req.query.username.toUpperCase()}' and password = '${md5(
+    req.query.password
+  )}';`;
   db.all(sql, (err, rows) => {
     if (err) {
       res.status(400).json({ error: err.message });
       return;
     }
+    if (rows[0].count) {
+      //credentials correct
+      //create session, return token and type
+      let type = rows[0].type;
+      let token = generateApiKey({ method: "bytes", length: 32 });
+      //get time when expires
+      let expires = new Date(new Date().getTime() + 60 * 60 * 1000); //add 1 day(60 sec dev)
+      //expires.
+      let sql2 = `INSERT INTO session (type, token, expires, username) VALUES ('${type}', '${token}', '${expires.toISOString()}', '${req.query.username}')`;
+      db.run(sql2, (err) => {
+        if (err) {
+          res.status(400).json({ error: err.message });
+          return;
+        }
+        res.json({ message: "success", token: token, type: type });
+      });
+    }
+  });
+});
+
+/**
+ * @param body account to login to
+ */
+app.get("/api/:key/account/session", async (req, res) => {
+  //check for prerequisites
+  let key = req.params.key;
+  try {
+    let result = await checkAPIkey(key, "account.session");
+  } catch (err) {
+    res.status(400).json({ error: err });
+    return;
+  }
+
+  //get body data
+  var errors = [];
+
+  if (!req.query.token) {
+    errors.push("Query must include token property");
+  }
+
+  if (errors.length) {
+    res.status(400).json({ error: errors.join(", ") });
+    return;
+  }
+
+  let sql = `SELECT COUNT(*) as count, expires FROM session WHERE token = '${req.query.token}'`;
+  db.all(sql, (err, rows) => {
+    if (err) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
+    if (!rows[0].count) {
+      res.status(400).json({ error: "Session not found" });
+      return;
+    }
+    //check if session expired
+    let now = new Date();
+    let expires = new Date(rows[0].expires);
+    if (now > expires) {
+      res.status(400).json({ error: "Session has expired" });
+      return;
+    }
     res.json({
       message: "success",
-      data: rows[0]
     });
   });
 });
