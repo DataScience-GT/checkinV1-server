@@ -840,23 +840,23 @@ app.get("/api/:key/user/email", async (req, res) => {
       }
       //console.log(url)
       let transporter = nodemailer.createTransport({
-        host: "smtp.ionos.com",
+        host: "smtp.gmail.com",
         port: 587,
         auth: {
-          user: "hello@hacklytics2022.com",
-          pass: "w2*jU?]@v?pRJ]n",
-        },
+          user: "info@hacklytics.io",
+          pass: "y:L.~c29]p",
+        },/*
         dkim: {
           domainName: "hacklytics2022.com",
           keySelector: "key1",
           privateKey: fs.readFileSync("./certificates/dkim/dkim.pem", "utf8"),
           cacheDir: "/tmp",
           cacheTreshold: 100 * 1024,
-        },
+        },*/
       });
       //console.log(url)
       message = {
-        from: "hello@hacklytics2022.com",
+        from: "info@hacklytics.io",
         to: rows[0].email,
         subject: "qr code",
         html: `<html><body style="background-color: white;"><h1>Here is your QR code to check in.</h1><img width="200" height="200" src="cid:qrcode@send" /></body></html>`,
