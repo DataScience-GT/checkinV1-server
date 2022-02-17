@@ -579,7 +579,7 @@ router.post("/:key/user/create", async (req, res) => {
     errors.push("User email not in valid format");
   }
   if (req.query.barcodeNum) {
-    if (!Number.isInteger(req.query.barcodeNum)) {
+    if (!Number.isInteger(+req.query.barcodeNum)) {
       errors.push("User barcodeNum must be an integer");
     }
   }
