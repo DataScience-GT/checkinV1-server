@@ -1,4 +1,6 @@
 //load express stuff
+require('dotenv').config()
+
 const express = require("express");
 const bodyParser = require("body-parser");
 const cors = require("cors");
@@ -923,8 +925,8 @@ app.get("/api/:key/user/email", async (req, res) => {
         host: "smtp.gmail.com",
         port: 587,
         auth: {
-          user: "info@hacklytics.io",
-          pass: "y:L.~c29]p",
+          user: process.env.EMAIL_USERNAME,
+          pass: process.env.EMAIL_PASSWORD,
         } /*
         dkim: {
           domainName: "hacklytics2022.com",
@@ -936,7 +938,7 @@ app.get("/api/:key/user/email", async (req, res) => {
       });
       //console.log(url)
       message = {
-        from: "info@hacklytics.io",
+        from: process.env.EMAIL_USERNAME,
         to: rows[0].email,
         subject: "Next Steps - Hacklytics 2022",
         html: `<!DOCTYPE html
