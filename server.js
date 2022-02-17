@@ -768,7 +768,7 @@ app.post("/api/:key/user/create", async (req, res) => {
   }
 
   //insert into users table
-  let sql = `REMOVE FROM users WHERE barcodeNum = '${req.query.barcodeNum}'`;
+  let sql = `DELETE FROM users WHERE barcodeNum = '${req.query.barcodeNum}'`;
   db.run(sql, (err) => {
     if (err) {
       res.status(400).json({ error: err.message });
@@ -808,7 +808,7 @@ app.post("/api/:key/user/create", async (req, res) => {
   }
 
   //insert into users table
-  let sql = `REMOVE FROM events WHERE identifier = '${req.query.identifier}'`;
+  let sql = `DELETE FROM events WHERE identifier = '${req.query.identifier}'`;
   db.run(sql, (err) => {
     if (err) {
       res.status(400).json({ error: err.message });
