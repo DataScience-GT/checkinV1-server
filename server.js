@@ -743,6 +743,86 @@ app.post("/api/:key/user/create", async (req, res) => {
 });
 
 /**
+ * @param body user to create
+ */
+ app.post("/api/:key/user/remove", async (req, res) => {
+  //check for prerequisites
+  let key = req.params.key;
+  try {
+    let result = await checkAPIkey(key, "user.create");
+  } catch (err) {
+    res.status(400).json({ error: err });
+    return;
+  }
+
+  //get body data
+  var errors = [];
+
+  if (!req.query.barcodeNum) {
+    errors.push("Query must include barcodeNum property");
+  }
+
+  if (errors.length) {
+    res.status(400).json({ error: errors.join(", ") });
+    return;
+  }
+
+  //insert into users table
+  let sql = `REMOVE FROM users WHERE barcodeNum = '${req.query.barcodeNum}'`;
+  db.run(sql, (err) => {
+    if (err) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
+    res.json({
+      message: "success",
+    });
+  });
+
+  //res.json({data: barcode});
+});
+
+/**
+ * @param body user to create
+ */
+ app.post("/api/:key/event/remove", async (req, res) => {
+  //check for prerequisites
+  let key = req.params.key;
+  try {
+    let result = await checkAPIkey(key, "event.create");
+  } catch (err) {
+    res.status(400).json({ error: err });
+    return;
+  }
+
+  //get body data
+  var errors = [];
+
+  if (!req.query.identifier) {
+    errors.push("Query must include identifier property");
+  }
+
+  if (errors.length) {
+    res.status(400).json({ error: errors.join(", ") });
+    return;
+  }
+
+  //insert into users table
+  let sql = `REMOVE FROM events WHERE identifier = '${req.query.identifier}'`;
+  db.run(sql, (err) => {
+    if (err) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
+    res.json({
+      message: "success",
+    });
+  });
+
+  //res.json({data: barcode});
+});
+
+/**
  * @param body user to update
  */
 app.post("/api/:key/user/update", async (req, res) => {
