@@ -16,7 +16,7 @@ app.use(express.json());
 app.use("/api", apiRouter);
 
 app.get("/", (req, res) => {
-  res.send("<p>This is a test application</p>");
+  res.send("<p>This is a test application made by John Ramberger for Hacklytics 2022 @ Georgia Tech</p>");
 });
 // Configuring body parser middleware
 //app.use(bodyParser.urlencoded({ extended: false }));
