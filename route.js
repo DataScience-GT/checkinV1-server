@@ -634,7 +634,7 @@ router.post("/:key/user/remove", async (req, res) => {
   }
 
   try {
-    const user = await Database.removeUser(req.query.barcodeNum);
+    await Database.removeUser(req.query.barcodeNum);
     res.json({
       message: "success",
     });
