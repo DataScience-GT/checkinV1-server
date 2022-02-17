@@ -1158,6 +1158,54 @@ app.get("/api/:key/account/session", async (req, res) => {
   });
 });
 
+/**
+ * @return newly generated master key
+ */
+ app.get("/api/:key/key/generatemaster", async (req, res) => {
+  //check for prerequisites
+  let key = req.params.key;
+  try {
+    let result = await checkAPIkey(key, "*");
+  } catch (err) {
+    res.status(400).json({ error: err });
+    return;
+  }
+
+  //generate new key
+  let prefix = generateApiKey({ method: "bytes", length: 7 });
+  let affix = generateApiKey({ method: "bytes", length: 20 });
+  let apikey = prefix + "." + affix;
+  let hash2 = md5(apikey);
+  var sql = `INSERT INTO api_keys (name, prefix, key, scopes) VALUES ('Master', '${prefix}', '${hash2}', '*');`;
+  db.run(sql, (err) => {
+    if (err) {
+      res.status(400).json({ error: err.message });
+      return;
+    }
+    res.json({
+      message: "success",
+      apikey: apikey,
+    });
+  });
+});
+
+/**
+ * @return scopes of api key
+ */
+app.get("/api/:key/db/download", async (req, res) => {
+  //check for prerequisites
+  let key = req.params.key;
+  try {
+    let result = await checkAPIkey(key, "*");
+  } catch (err) {
+    res.status(400).json({ error: err });
+    return;
+  }
+
+  const file = `${__dirname}/db/database.db`;
+  res.download(file); // Set disposition and send it.
+});
+
 /* ---------- TEMPLATE -------------'
 app.get("/api/:key/", async (req, res) => {
   //check for prerequisites
