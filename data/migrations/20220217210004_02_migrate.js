@@ -1,11 +1,11 @@
 exports.up = (knex) => {
   return knex.schema
-    .dropTable("api_keys")
-    .dropTable("events")
-    .dropTable("login")
-    .dropTable("users")
-    .dropTable("session")
-    .dropTable("checkin-template")
+    .dropTableIfExists("api_keys")
+    .dropTableIfExists("events")
+    .dropTableIfExists("login")
+    .dropTableIfExists("users")
+    .dropTableIfExists("session")
+    .dropTableIfExists("checkin-template")
     .createTable("api_keys", function (table) {
       table.increments("id").primary();
       table.string("name", 255);
@@ -41,17 +41,17 @@ exports.up = (knex) => {
     .createTable("checkin-template", function (table) {
       table.bigInteger("barcodeNum", 255).unique();
       table.integer("attended", 255).notNullable().defaultTo(0);
-      table.string("lastModified", 255);
       table.string("modifiedBy", 255);
+      table.timestamps(true, true);
     });
 };
 
 exports.down = (knex) => {
   return knex.schema
-    .dropTable("api_keys")
-    .dropTable("events")
-    .dropTable("login")
-    .dropTable("users")
-    .dropTable("session")
-    .dropTable("checkin-template");
+    .dropTableIfExists("api_keys")
+    .dropTableIfExists("events")
+    .dropTableIfExists("login")
+    .dropTableIfExists("users")
+    .dropTableIfExists("session")
+    .dropTableIfExists("checkin-template");
 };
