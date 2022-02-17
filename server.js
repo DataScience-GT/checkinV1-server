@@ -9,7 +9,7 @@ const port = 5000;
 const generateApiKey = require("generate-api-key");
 const nodemailer = require("nodemailer");
 const qr = require("qrcode");
-const fs = require('fs');
+const fs = require("fs");
 
 //load the database
 const db = require("./db/database.js");
@@ -745,7 +745,7 @@ app.post("/api/:key/user/create", async (req, res) => {
 /**
  * @param body user to create
  */
- app.post("/api/:key/user/remove", async (req, res) => {
+app.post("/api/:key/user/remove", async (req, res) => {
   //check for prerequisites
   let key = req.params.key;
   try {
@@ -785,7 +785,7 @@ app.post("/api/:key/user/create", async (req, res) => {
 /**
  * @param body user to create
  */
- app.post("/api/:key/event/remove", async (req, res) => {
+app.post("/api/:key/event/remove", async (req, res) => {
   //check for prerequisites
   let key = req.params.key;
   try {
@@ -925,21 +925,284 @@ app.get("/api/:key/user/email", async (req, res) => {
         auth: {
           user: "info@hacklytics.io",
           pass: "y:L.~c29]p",
-        },/*
+        } /*
         dkim: {
           domainName: "hacklytics2022.com",
           keySelector: "key1",
           privateKey: fs.readFileSync("./certificates/dkim/dkim.pem", "utf8"),
           cacheDir: "/tmp",
           cacheTreshold: 100 * 1024,
-        },*/
+        },*/,
       });
       //console.log(url)
       message = {
         from: "info@hacklytics.io",
         to: rows[0].email,
-        subject: "qr code",
-        html: `<html><body style="background-color: white;"><h1>Here is your QR code to check in.</h1><img width="200" height="200" src="cid:qrcode@send" /></body></html>`,
+        subject: "Next Steps - Hacklytics 2022",
+        html: `<!DOCTYPE html
+        PUBLIC "-//W3C//DTD XHTML 1.0 Transitional //EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+      <html xmlns="http://www.w3.org/1999/xhtml" xmlns:o="urn:schemas-microsoft-com:office:office"
+        xmlns:v="urn:schemas-microsoft-com:vml" lang="en">
+      
+      <head>
+        <link rel="stylesheet" type="text/css" hs-webfonts="true"
+          href="https://fonts.googleapis.com/css?family=Lato|Lato:i,b,bi">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link
+          href="https://fonts.googleapis.com/css2?family=Red+Hat+Text:ital,wght@0,300;0,400;0,500;0,600;0,700;1,300;1,400;1,500;1,600;1,700&display=swap"
+          rel="stylesheet">
+        <title>Hacklytics 2022 Emailer</title>
+        <meta property="og:title" content="Email template">
+      
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+      
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      
+        <style type="text/css">
+          table {
+            table-layout: fixed;
+          }
+      
+          a {
+            text-decoration: underline;
+            color: inherit;
+            color: blue;
+          }
+      
+          h1 {
+            font-size: 32px;
+          }
+      
+          h2 {
+            font-size: 28px;
+            font-weight: 900;
+          }
+      
+          img {
+            max-width: 100%;
+          }
+      
+          p {
+            font-weight: 100;
+          }
+      
+          td {
+            text-align: center;
+            vertical-align: middle;
+          }
+      
+          td.main {
+            text-align: left;
+      
+          }
+      
+          #email {
+            margin: auto;
+            width: 600px;
+            background-color: white;
+          }
+      
+          button {
+            font: inherit;
+            background-color: rgba(32, 163, 158, 1);
+            border: none;
+            padding: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 900;
+            color: white;
+            border-radius: 5px;
+            box-shadow: 3px 3px #ADCEF2;
+            text-align: center;
+          }
+      
+          .subtle-link {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #CBD6E2;
+          }
+      
+          #applyButton {
+            /*position: fixed;*/
+            box-sizing: border-box;
+            width: fit-content;
+            /*right: 15px;*/
+            padding: 15px 10px;
+            background-color: #7e3f73;
+            /*top: 15px;*/
+            color: #fff;
+            font-size: 26px;
+            font-weight: 600;
+            font-family: 'Red Hat Text';
+            text-decoration: none;
+            border-radius: 5px;
+            /*z-index: 9999;*/
+          }
+      
+          .heading {
+            position: relative;
+            color: rgba(32, 163, 158, 1);
+            font-size: 50px;
+            text-transform: uppercase;
+            text-align: center;
+          }
+      
+          .center {
+            margin-left: auto;
+            margin-right: auto;
+          }
+      
+          #qr-image {
+            display: block;
+            margin: 0 auto;
+          }
+        </style>
+      
+      </head>
+      
+      <body bgcolor="#F5F8FA"
+        style="width: 100%; margin: auto 0; padding:0; font-family:Lato, sans-serif; font-size:18px; color:#33475B; word-break:break-word; text-align: left;">
+      
+        <! View in Browser Link -->
+      
+          <div id="email">
+      
+      
+      
+            <! Banner -->
+              <table cellpadding="0" cellspacing="0px" bgcolor="#B7CCEC" role="presentation" class="center"
+                style="color: white; text-align: center; white-space: nowrap" width="100%">
+                <tr>
+      
+                  <th style="color: white; text-align: center; padding: 0px">
+                    <img style="padding: 0px;" src="https://i.ibb.co/3kmZTTh/Screenshot-2022-02-02-at-5-20-30-PM.png"
+                      alt="Hacklytics-2022-header" border="0">
+                  </th>
+      
+                </tr>
+              </table>
+      
+              <p style="line-height: 0;font-size: 12px" align="center">Brought to you by <a href="https://datasciencegt.org"
+                  style="color:rgba(32, 163, 158, 1);" target="_blank">Data Science at GT</a>, a 501(c)(3) organization</p>
+      
+      
+      
+      
+              <! First Row -->
+      
+                <table role="presentation" border="0" cellpadding="0" cellspacing="10px" style="padding: 0px 30px 30px 30px;">
+      
+                  <tr>
+                    <td class="main">
+                      <h1 align="center">What next?</h1>
+      
+                      <p>
+                        Please show us this QR code when you check in at the event.
+                      </p>
+                      <img id="qr-image" width="200" height="200" src="cid:qrcode@send" />
+                      <p>
+                        Now that you've been accepted into Hacklytics 2022, here are the next steps:
+                      </p>
+      
+                      <ul>
+                        <li> Fill out the <a
+                            href="https://docs.google.com/forms/d/e/1FAIpQLSciOboudzy4FVOOd5bEgkmc44JbJw5B0s7etkjSZnsz6q_nig/viewform"
+                            target="_blank">confirmation form</a> before Thursday, 17th February 2022.
+                        <li> Join the <a href="https://discord.gg/9aZUUUDf" target="_blank">Discord</a> and interact with
+                          hackers, talk to sponsors, form teams, and ask us your questions. We will be using it for all
+                          important communication.
+                        <li> Register for Hacklytics 2022 on <a href="https://hacklytics-2022.devpost.com/"
+                            target="_blank">Devpost</a>.
+                        <li> Register for Google Cloud's Workshop on Cloud Management <a href="https://goo.gle/hacklytics" ,
+                            target="_blank">here</a>. It will occur on Thursday, 02/17.
+                        <li> New to hacking? Check out <a href="https://guide.mlh.io/">this guide</a> that covers everything
+                          you will need.
+                      </ul>
+      
+                      <h3>Messages from our Sponsors</h3>
+                      <p>
+                        <strong>CREATE-X</strong>: If you are selected as one of the top 3 winners, we offer you an automatic
+                        acceptance to our <a
+                          href="https://create-x.gatech.edu/#:~:text=CREATE%2DX's%20Startup%20Launch%20is,fully%20functioning%20and%20viable%20startups."
+                          target="_blank">Startup Launch</a> program, should you choose to continue your project. We will
+                        provide you with mentors, contacts, and all the resources you need to turn your project into a
+                        real-world product.
+                      </p>
+                      <p>
+                        <strong>DeepNote</strong>: Deepnote is a collaborative Python notebook that runs in your browser. We
+                        will be providing you with lightning fast GPUs upon which you can train your ML models. Our
+                        easy-to-use software will also make it incredibly simple for you to visualize data in a plethora of
+                        different formats.
+                      </p>
+      
+      
+                      <p>
+                        Feel free to reach out to us at <a target="_blank"
+                          href="mailto:hello@hacklytics.io">hello@hacklytics.io</a> for any questions!
+                      </p>
+                      <p>
+                        See you there, <br>The Hacklytics Team
+                      </p>
+                      <!-- <br> -->
+                      <p style="font-size: 12px; color: gray">
+                        While you're at it, check out our <a href="https://hacklytics.io/" target="_blank">website</a> and
+                        drop a follow on our <a href="https://www.instagram.com/hacklytics/">Instagram!</a>
+                      </p>
+      
+                    </td>
+                  </tr>
+                </table>
+      
+                <! Footer -->
+                  <table role="presentation" width="100%" class="center">
+                    <tr>
+                      <td bgcolor="gray" align="center" style="color: white;" width="50%">
+                        <h2>Thanks to our supportive sponsors!</h2>
+      
+                        <table align="center" width="75%" style="white-space: nowrap; text-align: center" text-align="center">
+      
+                          <tr>
+      
+                            <td>
+                              <img src="https://hacklytics.io/assets/images/sponsors/anthem.png" width="300px">
+                            </td>
+      
+                            <td>
+                              <img src="https://i.ibb.co/YWJT5Yn/CREATE-X-GTGold-CMYK.png" alt="CREATE-X-GTGold-CMYK"
+                                border="0" width="200px">
+      
+                            </td>
+      
+                          </tr>
+                          <tr>
+                            <td>
+                              <a href="https://deepnote.com/" target="_blank"><img
+                                  src="https://i.ibb.co/7vwt9jY/deepnote-logo.png" alt="deepnote-logo" border="0"
+                                  width="200px"></a>
+                            </td>
+                            <td>
+                              <img src="https://hacklytics.io/assets/images/sponsors/gtAthletics.png" width="300px">
+                            </td>
+                          </tr>
+      
+      
+                        </table>
+      
+      
+                        <!-- <a id="applyButton" target="_blank" href="https://form.typeform.com/to/J7doCIw1" class="text">Apply Now!</a> -->
+      
+                      </td>
+                    </tr>
+                  </table>
+      
+          </div>
+      </body>
+      
+      </html>`,
         attachments: [
           {
             // encoded string as an attachment
@@ -1161,7 +1424,7 @@ app.get("/api/:key/account/session", async (req, res) => {
 /**
  * @return newly generated master key
  */
- app.get("/api/:key/key/generatemaster", async (req, res) => {
+app.get("/api/:key/key/generatemaster", async (req, res) => {
   //check for prerequisites
   let key = req.params.key;
   try {
