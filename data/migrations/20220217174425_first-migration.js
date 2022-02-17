@@ -1,9 +1,5 @@
 exports.up = (knex) => {
   return knex.schema
-    .createTable("Profiles", function (table) {
-      table.increments("id").primary();
-      table.string("name", 2555).notNullable();
-    })
     .createTable("api_keys", function (table) {
       table.increments("id").primary();
       table.string("name", 255);
@@ -13,7 +9,7 @@ exports.up = (knex) => {
     })
     .createTable("events", function (table) {
       table.increments("eventId").primary();
-      table.string("identifier", 255).notNullable();
+      table.string("identifier", 255).notNullable().unique();
       table.string("name", 255);
       table.string("description", 255);
       table.integer("status", 255).defaultTo(0);
