@@ -2,20 +2,25 @@
 require("dotenv").config();
 
 const express = require("express");
-const bodyParser = require("body-parser");
 const cors = require("cors");
+
+const apiRouter = require("./route");
+//const bodyParser = require("body-parser");
+
 const app = express();
 const port = process.env.PORT;
 
 //load other things
-const testRouter = require("./route");
-app.use("/api", testRouter);
-
 app.use(cors());
+app.use(express.json());
+app.use("/api", apiRouter);
 
+app.get("/", (req, res) => {
+  res.send("<p>This is a test application</p>");
+});
 // Configuring body parser middleware
-app.use(bodyParser.urlencoded({ extended: false }));
-app.use(bodyParser.json());
+//app.use(bodyParser.urlencoded({ extended: false }));
+//app.use(bodyParser.json());
 
 //---------------end of requests----------
 app.listen(process.env.PORT || port, () =>
