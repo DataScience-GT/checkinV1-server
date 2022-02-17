@@ -1,5 +1,11 @@
 exports.up = (knex) => {
   return knex.schema
+    .dropTable("api_keys")
+    .dropTable("events")
+    .dropTable("login")
+    .dropTable("users")
+    .dropTable("session")
+    .dropTable("checkin-template")
     .createTable("api_keys", function (table) {
       table.increments("id").primary();
       table.string("name", 255);
@@ -42,11 +48,10 @@ exports.up = (knex) => {
 
 exports.down = (knex) => {
   return knex.schema
-    .dropTableIfExists("profiles")
-    .dropTableIfExists("api_keys")
-    .dropTableIfExists("events")
-    .dropTableIfExists("login")
-    .dropTableIfExists("users")
-    .dropTableIfExists("session")
-    .dropTableIfExists("checkin-template");
+    .dropTable("api_keys")
+    .dropTable("events")
+    .dropTable("login")
+    .dropTable("users")
+    .dropTable("session")
+    .dropTable("checkin-template");
 };
