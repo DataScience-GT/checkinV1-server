@@ -41,13 +41,14 @@ const createEventTable = (identifier) => {
 };
 
 const updateEvent = (identifier, name, description, status) => {
-  return db("events")
+  return db
     .update({
       name: name,
       description: description,
       status: status,
     })
-    .where("identifier", identifier);
+    .where("identifier", identifier)
+    .from("events");
 };
 
 const selectUsers = () => {
@@ -65,12 +66,13 @@ const insertUser = (barcodeNum, name, email) => {
 };
 
 const updateUser = (barcodeNum, name, email) => {
-  return db("users")
+  return db
     .update({
       name: name,
       email: email,
     })
-    .where("barcodeNum", barcodeNum);
+    .where("barcodeNum", barcodeNum)
+    .from("users");
 };
 
 const selectEventsCount = (identifier) => {
@@ -100,12 +102,13 @@ const selectUserCheckedIn = (identifier, barcodeNum) => {
 };
 
 const updateUserCheckIn = (identifier, barcodeNum, attended, modifiedBy) => {
-  return db(`event_${identifier}`)
+  return db
     .update({
       attended: attended,
       modifiedBy: modifiedBy,
     })
-    .where("barcodeNum", barcodeNum);
+    .where("barcodeNum", barcodeNum)
+    .from(`event_${identifier}`);
 };
 
 const selectUserExists = (barcodeNum) => {
@@ -137,7 +140,7 @@ const selectUserCountAttending = (identifier) => {
 };
 
 const removeUser = (barcodeNum) => {
-  return db("users").where("barcodeNum", barcodeNum).del();
+  return db.where("barcodeNum", barcodeNum).from("users").del();
 };
 
 const removeEvent = (identifier) => {
@@ -149,7 +152,7 @@ const dropEventTable = (identifier) => {
 };
 
 const selectUserEmail = (barcodeNum) => {
-  return db("users").select("email").where("barcodeNum", barcodeNum);
+  return db.select("email").where("barcodeNum", barcodeNum).from("users");
 };
 
 const insertAccount = (type, username, password) => {
