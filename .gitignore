@@ -1,5 +1,6 @@
 .env
 /certificates/
+/certificates2/
 
 /db/
 db/database.db
