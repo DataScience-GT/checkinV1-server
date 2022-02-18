@@ -777,7 +777,7 @@ router.get("/:key/user/email", async (req, res) => {
       message = {
         from: process.env.EMAIL_USERNAME,
         to: email[0].email,
-        subject: "Next Steps - Hacklytics 2022",
+        subject: "QR Code - Hacklytics 2022",
         html: `<!DOCTYPE html
             PUBLIC "-//W3C//DTD XHTML 1.0 Transitional //EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
           <html xmlns="http://www.w3.org/1999/xhtml" xmlns:o="urn:schemas-microsoft-com:office:office"
@@ -956,8 +956,6 @@ router.get("/:key/user/email", async (req, res) => {
                               important communication.
                             <li> Register for Hacklytics 2022 on <a href="https://hacklytics-2022.devpost.com/"
                                 target="_blank">Devpost</a>.
-                            <li> Register for Google Cloud's Workshop on Cloud Management <a href="https://goo.gle/hacklytics" ,
-                                target="_blank">here</a>. It will occur on Thursday, 02/17.
                             <li> New to hacking? Check out <a href="https://guide.mlh.io/">this guide</a> that covers everything
                               you will need.
                           </ul>
