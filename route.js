@@ -1065,6 +1065,44 @@ router.get("/:key/user/email", async (req, res) => {
 });
 
 /**
+ * user.email
+ */
+router.get("/:key/user/qr", async (req, res) => {
+  //check for prerequisites
+  let key = req.params.key;
+  try {
+    let result = await checkAPIkey(key, "user.email");
+  } catch (err) {
+    res.status(400).json({ error: err });
+    return;
+  }
+
+  if (!req.query.barcodeNum) {
+    res.status(400).json({ error: "Query must include barcodeNum property" });
+    return;
+  }
+
+  try {
+    const email = await Database.selectUserEmail(req.query.barcodeNum);
+    if (!email[0].email) {
+      res.status(400).json({ error: "User not found with given barcodeNum" });
+      return;
+    }
+    //send email
+    qr.toDataURL(req.query.barcodeNum, function (err, url) {
+      if (err) {
+        res.status(400).json({ error: err });
+        return;
+      }
+      res.json({ message: "success", data: url });
+    });
+  } catch (err) {
+    res.status(400).json({ error: err });
+    return;
+  }
+});
+
+/**
  * account.create
  */
 router.post("/:key/account/create", async (req, res) => {
